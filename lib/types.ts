@@ -40,12 +40,7 @@ export const AVAILABLE_MODELS: LLMModel[] = [
     provider: "Anthropic",
     free: false,
   },
-  {
-    id: "openai/gpt-4o-mini",
-    name: "GPT-4o Mini",
-    provider: "OpenAI",
-    free: true,
-  },
+
   {
     id: "openai/gpt-4.1",
     name: "GPT-4.1",

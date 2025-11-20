@@ -22,6 +22,7 @@ Response format:
 
 
 function constructUserPrompt(rule: string, documentText: string): string {
+  // console.log("hello " ,documentText)
   return `RULE TO CHECK: "${rule}"
 
 DOCUMENT TEXT:
