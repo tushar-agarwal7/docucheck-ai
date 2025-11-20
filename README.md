@@ -2,13 +2,13 @@
 
 AI-powered document compliance checker that validates PDF documents against custom rules using advanced language models.
 
-![DocuCheck AI](./landing.png)
-![DocuCheck AI](./report.png)
+![DocuCheck AI](/public/landing.png)
+![DocuCheck AI](/public/report.png)
 ## Features ✨
 
 - **PDF Upload**: Drag-and-drop or click to upload PDF documents (2-10 pages, max 10MB)
 - **Custom Rules**: Define 3 compliance rules to check your document against
-- **Multi-Model Support**: Choose from multiple AI models (Gemini Flash, Llama 3.1, Mistral 7B, Claude 3.5)
+- **Multi-Model Support**: Choose from multiple AI models (Gemini 2.5,GPT 4.1 , Claude 3.5)
 - **Detailed Analysis**: Get pass/fail status, evidence, reasoning, and confidence scores for each rule
 - **Professional UI**: Dark theme with smooth animations and responsive design
 - **Real-time Processing**: Fast document analysis with loading states
@@ -121,7 +121,7 @@ docucheck-ai/
       "confidence": 92
     }
   ],
-  "model": "google/gemini-flash-1.5"
+  "model": "google/gemini-flash-2.5"
 }
 ```
 
@@ -129,7 +129,7 @@ docucheck-ai/
 
 | Model | Provider | Cost | Speed | Accuracy |
 |-------|----------|------|-------|----------|
-| Gemini Flash 1.5 | Google | Free | Fast | High |
+| Gemini Flash 2.5 | Google | Free | Fast | High |
 | GPT 4.1 | Meta | Free | Fast | Good |
 | Claude 3.5 Sonnet | Anthropic | Paid | Medium | Very High |
 
