@@ -25,26 +25,14 @@ export interface LLMModel {
   id: string;
   name: string;
   provider: string;
-  free: boolean;
+  description: string;
 }
+
 export const AVAILABLE_MODELS: LLMModel[] = [
   {
-    id: "google/gemini-2.5-flash",
-    name: "Gemini 2.5 Flash",
-    provider: "Google",
-    free: true,
-  },
-  {
-    id: "anthropic/claude-3.5-sonnet",
-    name: "Claude 3.5 Sonnet",
-    provider: "Anthropic",
-    free: false,
-  },
-
-  {
-    id: "openai/gpt-4.1",
-    name: "GPT-4.1",
+    id: "gpt-4o-mini",
+    name: "GPT-4o Mini",
     provider: "OpenAI",
-    free: false,
-  }
+    description: "Fast, accurate, and cost-effective for most tasks",
+  },
 ];

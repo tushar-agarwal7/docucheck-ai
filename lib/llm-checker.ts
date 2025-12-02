@@ -2,7 +2,9 @@
 
 import { CheckResult } from "./types";
 
-
+/**
+ * System prompt for document compliance checking
+ */
 const SYSTEM_PROMPT = `You are a precise document compliance checker. Your task is to analyze document text and determine if it meets specific rules.
 
 CRITICAL INSTRUCTIONS:
@@ -20,9 +22,10 @@ Response format:
   "confidence": number between 0 and 100
 }`;
 
-
+/**
+ * Constructs the user prompt for checking a specific rule
+ */
 function constructUserPrompt(rule: string, documentText: string): string {
-  // console.log("hello " ,documentText)
   return `RULE TO CHECK: "${rule}"
 
 DOCUMENT TEXT:
@@ -31,28 +34,29 @@ ${documentText}
 Analyze the document and determine if it meets the rule. Respond with JSON only.`;
 }
 
+/**
+ * Checks a single rule against the document using OpenAI
+ */
 export async function checkRuleWithLLM(
   rule: string,
   documentText: string,
   model: string
 ): Promise<CheckResult> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
-    throw new Error("OPENROUTER_API_KEY is not configured");
+    throw new Error("OPENAI_API_KEY is not configured");
   }
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-        "X-Title": "DocuCheck AI",
       },
       body: JSON.stringify({
-        model,
+        model: model,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: constructUserPrompt(rule, documentText) },
@@ -64,7 +68,7 @@ export async function checkRuleWithLLM(
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
@@ -74,6 +78,7 @@ export async function checkRuleWithLLM(
       throw new Error("No response from LLM");
     }
 
+    // Clean and parse response
     const cleaned = messageContent
       .replace(/```json/g, "")
       .replace(/```/g, "")
@@ -88,7 +93,6 @@ export async function checkRuleWithLLM(
       reasoning: parsed.reasoning || "No reasoning provided",
       confidence: Math.min(Math.max(parsed.confidence || 0, 0), 100),
     };
-
   } catch (error) {
     console.error("Error checking rule with LLM:", error);
 
@@ -102,13 +106,14 @@ export async function checkRuleWithLLM(
   }
 }
 
-
+/**
+ * Checks multiple rules against the document in parallel
+ */
 export async function checkAllRules(
   rules: string[],
   documentText: string,
   model: string
 ): Promise<CheckResult[]> {
-  // Check all rules in parallel for better performance
   const results = await Promise.all(
     rules.map((rule) => checkRuleWithLLM(rule, documentText, model))
   );
