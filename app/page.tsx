@@ -5,10 +5,13 @@
 import { useState } from "react";
 import { CheckResult, AVAILABLE_MODELS } from "@/lib/types";
 import { extractPDFTextClient } from "@/lib/pdf-extractor";
+import { validateAllRules } from "@/lib/validation";
 import UploadSection from "@/components/UploadSection";
 import RulesInput from "@/components/RulesInput";
 import ModelSelector from "@/components/ModelSelector";
 import ResultsTable from "@/components/ResultsTable";
+import SummaryCard from "@/components/SummaryCard";
+import DocumentSummary from "@/components/DocumentSummary"; 
 import { Play, Loader2 } from "lucide-react";
 
 export default function Home() {
@@ -20,31 +23,42 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [lastCheckTime, setLastCheckTime] = useState<number>(0);
+  const [documentSummary, setDocumentSummary] = useState<string>("");
 
   const handleCheckDocument = async () => {
-   
     setError(null);
     setResults(null);
+    setDocumentSummary(""); // RESET SUMMARY
 
+    // RATE LIMITING VALIDATION
+    const now = Date.now();
+    if (now - lastCheckTime < 3000) {
+      setError("⏱️ Please wait 3 seconds between checks to prevent spam");
+      return;
+    }
+
+    // FILE VALIDATION
     if (!file) {
       setError("Please upload a PDF file");
       return;
     }
 
-    const emptyRules = rules.filter((rule) => rule.trim() === "");
-    if (emptyRules.length > 0) {
-      setError("Please fill in all 3 rules");
+    // RULES VALIDATION
+    const rulesValidation = validateAllRules(rules);
+    if (!rulesValidation.valid) {
+      setError(rulesValidation.error || "Invalid rules");
       return;
     }
 
     setLoading(true);
+    setLastCheckTime(now);
 
     try {
       console.log("Extracting text from PDF...");
       const pdfText = await extractPDFTextClient(file);
       console.log("Extracted text length:", pdfText.length);
 
-      // Step 2: Send to API as JSON
       console.log("Sending to API...");
       const response = await fetch("/api/check-document", {
         method: "POST",
@@ -66,6 +80,7 @@ export default function Home() {
 
       setResults(data.results);
       setModelUsed(data.model);
+      setDocumentSummary(data.summary || ""); // SET SUMMARY
     } catch (err) {
       console.error("Error checking document:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -97,10 +112,8 @@ export default function Home() {
               error={uploadError}
               setError={setUploadError}
             />
-
             <RulesInput rules={rules} onRulesChange={setRules} />
           </div>
-
           <div>
             <ModelSelector selectedModel={selectedModel} onModelChange={setSelectedModel} />
           </div>
@@ -137,22 +150,55 @@ export default function Home() {
           </div>
         )}
 
-        {results && <ResultsTable results={results} model={modelUsed} />}
+        {/* RESULTS SECTION - UPDATED ORDER */}
+        {results && (
+          <>
+            {/* 1. Document Summary (NEW - Shows PDF summary) */}
+            {documentSummary && (
+              <DocumentSummary 
+                summary={documentSummary} 
+                fileName={file?.name}
+              />
+            )}
+            
+            {/* 2. Compliance Summary (Shows pass/fail metrics) */}
+            <SummaryCard results={results} />
+            
+            {/* 3. Detailed Results Table */}
+            <ResultsTable results={results} model={modelUsed} />
+          </>
+        )}
 
         {/* Loading Skeleton */}
         {loading && (
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-8">
-            <div className="animate-pulse space-y-4">
-              <div className="h-6 bg-gray-700 rounded w-1/3"></div>
-              <div className="h-4 bg-gray-700 rounded w-2/3"></div>
-              <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+          <div className="space-y-6">
+            {/* Summary Skeleton */}
+            <div className="bg-gray-800 border border-gray-700 rounded-lg p-8">
+              <div className="animate-pulse space-y-4">
+                <div className="h-6 bg-gray-700 rounded w-1/3"></div>
+                <div className="h-4 bg-gray-700 rounded w-full"></div>
+                <div className="h-4 bg-gray-700 rounded w-5/6"></div>
+                <div className="h-4 bg-gray-700 rounded w-4/6"></div>
+              </div>
+            </div>
+            
+            {/* Compliance Skeleton */}
+            <div className="bg-gray-800 border border-gray-700 rounded-lg p-8">
+              <div className="animate-pulse space-y-4">
+                <div className="h-6 bg-gray-700 rounded w-1/4"></div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="h-20 bg-gray-700 rounded"></div>
+                  <div className="h-20 bg-gray-700 rounded"></div>
+                  <div className="h-20 bg-gray-700 rounded"></div>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
         {/* Footer */}
         <div className="mt-12 text-center text-gray-500 text-sm">
-          <p>Built with Next.js, OpenRouter API, and Tailwind CSS</p>
+          <p>Built with Next.js, OpenAI, and Tailwind CSS</p>
         </div>
       </div>
     </div>

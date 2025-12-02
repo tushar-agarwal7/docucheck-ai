@@ -18,6 +18,7 @@ export interface CheckResponse {
   results: CheckResult[];
   model: string;
   success: boolean;
+  summary?: string; 
   error?: string;
 }
 

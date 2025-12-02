@@ -120,3 +120,63 @@ export async function checkAllRules(
 
   return results;
 }
+export async function generatePDFSummary(
+  documentText: string,
+  model: string
+): Promise<string> {
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured");
+  }
+
+  const summaryPrompt = `You are a document summarization expert. Read the following document and provide a clear, concise summary.
+
+INSTRUCTIONS:
+1. Summarize the main points and key information in 3-4 sentences
+2. Focus on the document's purpose, main topics, and important details
+3. Write in a professional, objective tone
+4. Do NOT use bullet points or lists - write in paragraph form
+5. Keep it under 150 words
+
+DOCUMENT TEXT:
+${documentText}
+
+Provide the summary:`;
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          { role: "system", content: "You are a professional document summarizer. Provide clear, concise summaries." },
+          { role: "user", content: summaryPrompt },
+        ],
+        temperature: 0.5,
+        max_tokens: 300,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    const summary = data.choices?.[0]?.message?.content?.trim();
+
+    if (!summary) {
+      throw new Error("No summary generated");
+    }
+
+    return summary;
+  } catch (error) {
+    console.error("Error generating PDF summary:", error);
+    return "Unable to generate document summary. Please try again.";
+  }
+}
